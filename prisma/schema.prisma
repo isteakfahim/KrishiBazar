@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  FARMER
+  BUYER
+  PRICE_EDITOR
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  COD
+  BKASH
+  NAGAD
+  ROCKET
+}
+
+enum PriceSource {
+  ADMIN
+  MARKET
+  LISTING
+}
+
+model User {
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  passwordHash   String
+  phone          String?
+  role           UserRole       @default(BUYER)
+  farmerProfile  FarmerProfile?
+  buyerOrders    Order[]        @relation("BuyerOrders")
+  priceEntries   PriceHistory[] @relation("EnteredPriceHistories")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model FarmerProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName        String
+  phone           String
+  bio             String?
+  profileImageUrl String?
+  districtId      String
+  district        District  @relation(fields: [districtId], references: [id])
+  farms           Farm[]
+  products        Product[]
+  farmerOrders    Order[]   @relation("FarmerOrders")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Farm {
+  id              String      @id @default(cuid())
+  farmerProfileId String
+  farmerProfile   FarmerProfile @relation(fields: [farmerProfileId], references: [id], onDelete: Cascade)
+  name            String
+  landSize        Decimal
+  landUnit        String      @default("Bigha") // Bigha, Decimal, Acre
+  mainCrops       String?
+  description     String?
+  districtId      String
+  district        District    @relation(fields: [districtId], references: [id])
+  latitude        Float?
+  longitude       Float?
+  images          FarmImage[]
+  products        Product[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model FarmImage {
+  id        String   @id @default(cuid())
+  farmId    String
+  farm      Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  caption   String?
+  createdAt DateTime @default(now())
+}
+
+model District {
+  id             String          @id @default(cuid())
+  nameEn         String          @unique
+  nameBn         String
+  division       String
+  latitude       Float
+  longitude      Float
+  farmerProfiles FarmerProfile[]
+  farms          Farm[]
+  products       Product[]
+  deliveryOrders Order[]         @relation("OrderDeliveryDistrict")
+  priceHistories PriceHistory[]
+}
+
+model ProductCategory {
+  id             String         @id @default(cuid())
+  nameEn         String         @unique
+  nameBn         String
+  slug           String         @unique
+  icon           String?
+  description    String?
+  products       Product[]
+  priceHistories PriceHistory[]
+}
+
+model Product {
+  id                  String          @id @default(cuid())
+  farmerProfileId     String
+  farmerProfile       FarmerProfile   @relation(fields: [farmerProfileId], references: [id], onDelete: Cascade)
+  farmId              String?
+  farm                Farm?           @relation(fields: [farmId], references: [id], onDelete: SetNull)
+  categoryId          String
+  category            ProductCategory @relation(fields: [categoryId], references: [id])
+  districtId          String
+  district            District        @relation(fields: [districtId], references: [id])
+  nameEn              String
+  nameBn              String
+  descriptionEn       String?
+  descriptionBn       String?
+  pricePerKg          Decimal
+  quantityAvailable   Decimal
+  unit                String          @default("kg")
+  minimumOrderQty     Decimal         @default(1)
+  expectedHarvestDate DateTime?
+  imageUrl            String?
+  isAvailable         Boolean         @default(true)
+  orderItems          OrderItem[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+}
+
+model VehicleType {
+  id          String   @id @default(cuid())
+  nameEn      String   @unique
+  nameBn      String
+  ratePerKm   Decimal
+  maxWeightKg Decimal
+  description String?
+  orders      Order[]
+}
+
+model Order {
+  id                 String        @id @default(cuid())
+  orderNumber        String        @unique
+  buyerId            String
+  buyer              User          @relation("BuyerOrders", fields: [buyerId], references: [id])
+  farmerProfileId    String
+  farmerProfile      FarmerProfile @relation("FarmerOrders", fields: [farmerProfileId], references: [id])
+  productCost        Decimal
+  transportCost      Decimal
+  totalAmount        Decimal
+  status             OrderStatus   @default(PENDING)
+  deliveryAddress    String
+  deliveryDistrictId String
+  deliveryDistrict   District      @relation("OrderDeliveryDistrict", fields: [deliveryDistrictId], references: [id])
+  vehicleTypeId      String?
+  vehicleType        VehicleType?  @relation(fields: [vehicleTypeId], references: [id])
+  distanceKm         Float?
+  items              OrderItem[]
+  payments           Payment[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Decimal
+  unitPrice Decimal
+  subtotal  Decimal
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount        Decimal
+  method        PaymentMethod @default(COD)
+  transactionId String?
+  status        PaymentStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model PriceHistory {
+  id          String          @id @default(cuid())
+  categoryId  String
+  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  districtId  String
+  district    District        @relation(fields: [districtId], references: [id])
+  pricePerKg  Decimal
+  date        DateTime
+  source      PriceSource     @default(MARKET)
+  enteredById String?
+  enteredBy   User?           @relation("EnteredPriceHistories", fields: [enteredById], references: [id])
+  isDemo      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+
+  @@unique([categoryId, districtId, date, source])
+}

@@ -1,26 +1,71 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #F3F7F2;
+  --ink: #12221A;
+  --green: #17553A;
+  --green-hover: #11422D;
+  --up: #1A8F52;
+  --down: #C93C3C;
+  --farmer-price: #C98A06;
+  --tint: #E4EFE6;
+  --card-bg: #FFFFFF;
+  --card-border: #D7E5DB;
+  --muted: #566E61;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme="dark"],
+.dark {
+  --bg: #0C1712;
+  --ink: #E9F1EC;
+  --green: #257D57;
+  --green-hover: #2DA06E;
+  --up: #22B467;
+  --down: #E55353;
+  --farmer-price: #EBB027;
+  --tint: #162B21;
+  --card-bg: #112019;
+  --card-border: #1E372B;
+  --muted: #8AA495;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-green: var(--green);
+  --color-green-hover: var(--green-hover);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-farmer-price: var(--farmer-price);
+  --color-tint: var(--tint);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-muted: var(--muted);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-hind-siliguri), var(--font-bricolage), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-bricolage), var(--font-hind-siliguri), sans-serif;
+  letter-spacing: -0.015em;
+}
+
+/* Animations respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
